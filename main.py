@@ -6,35 +6,12 @@ from pathlib import Path
 from schemas import MealSearchResults, Meal#, MealCreate
 from meal_data import MEALS
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
-from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_INSTANCE_ID, Resource
-
-trace.set_tracer_provider(
-    TracerProvider(
-        resource=Resource.create(
-            {
-                SERVICE_NAME: "dashboard",
-                SERVICE_NAMESPACE: "wmo.ui.web",
-                SERVICE_INSTANCE_ID: os.environ.get('WEBSITE_HOSTNAME',"unknown"),
-            }
-        )
-    )
-)
 
 TEMPLATES = Jinja2Templates(directory=str("templates"))
 
-tracer = trace.get_tracer(__name__)
-
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
-
 FastAPIInstrumentor().instrument_app(app)
-
-traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['CS_APPINSIGHTS'])
-span_processor = BatchSpanProcessor(traceExporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
 
 @app.get("/", status_code=200)
 async def dashboard_page(request: Request) -> dict:
