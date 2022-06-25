@@ -1,14 +1,39 @@
+import os
 from fastapi import FastAPI, APIRouter, Query, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from typing import Optional, Any
 from pathlib import Path
 from schemas import MealSearchResults, Meal#, MealCreate
 from meal_data import MEALS
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_INSTANCE_ID, Resource
+
+trace.set_tracer_provider(
+    TracerProvider(
+        resource=Resource.create(
+            {
+                SERVICE_NAME: "dashboard",
+                SERVICE_NAMESPACE: "wmo.ui.web",
+                SERVICE_INSTANCE_ID: "main",
+            }
+        )
+    )
+)
+
+tracer = trace.get_tracer(__name__)
+traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
+span_processor = BatchSpanProcessor(traceExporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
 
 BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
+FastAPIInstrumentor.instrument_app(app)
 
 api_router = APIRouter()
 
@@ -45,8 +70,6 @@ def search_meals(
     Search for recipes based on label keyword
     """
     if not keyword:
-        # we use Python list slicing to limit results
-        # based on the max_results query parameter
         return {"results": MEALS[:max_results]}
 
     results = filter(lambda recipe: keyword.lower() in recipe["label"].lower(), MEALS)

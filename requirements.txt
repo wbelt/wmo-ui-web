@@ -3,3 +3,6 @@ uvicorn
 gunicorn
 pydantic
 jinja2
+azure-cosmos
+azure-monitor-opentelemetry-exporter
+opentelemetry-instrumentation-fastapi
