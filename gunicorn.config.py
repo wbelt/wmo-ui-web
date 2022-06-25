@@ -6,7 +6,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_NAMESPACE, SERVICE
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 
-bind = "127.0.0.1:8000"
+bind = "0.0.0.0:8000"
 
 # Sample Worker processes
 workers = 2
