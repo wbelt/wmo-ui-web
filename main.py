@@ -11,7 +11,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 TEMPLATES = Jinja2Templates(directory=str("templates"))
 
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
-FastAPIInstrumentor().instrument_app(app)
+FastAPIInstrumentor.instrument_app(app)
 
 @app.get("/", status_code=200)
 async def dashboard_page(request: Request) -> dict:
