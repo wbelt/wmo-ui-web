@@ -28,6 +28,9 @@ BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 tracer = trace.get_tracer(__name__)
+traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
+span_processor = BatchSpanProcessor(traceExporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
 
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
 FastAPIInstrumentor.instrument_app(app)
@@ -92,7 +95,3 @@ if __name__ == "__main__":
     print("Press Control-C to exit", end="...")
     uvicorn.run(app, host="0.0.0.0", port=8001, log_level="debug")
     print("application ended.")
-else:
-    traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
-    span_processor = BatchSpanProcessor(traceExporter)
-    trace.get_tracer_provider().add_span_processor(span_processor)
