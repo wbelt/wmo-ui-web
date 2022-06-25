@@ -18,7 +18,7 @@ trace.set_tracer_provider(
             {
                 SERVICE_NAME: "dashboard",
                 SERVICE_NAMESPACE: "wmo.ui.web",
-                SERVICE_INSTANCE_ID: os.environ['WEBSITE_HOSTNAME'],
+                SERVICE_INSTANCE_ID: "main-1",
             }
         )
     )
@@ -64,9 +64,9 @@ def fetch_recipe(*, meal_id: int) -> dict:
     """
 
     result = [meal for meal in MEALS if meal["id"] == meal_id]
-    if result:
+    if not result:
         raise HTTPException(
-                status_code=404, detail=f"Recipe with ID {meal_id} not found"
+                status_code=404, detail=f"Meal with ID {meal_id} not found"
             )
     return result[0]
 
