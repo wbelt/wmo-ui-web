@@ -18,22 +18,23 @@ trace.set_tracer_provider(
             {
                 SERVICE_NAME: "dashboard",
                 SERVICE_NAMESPACE: "wmo.ui.web",
-                SERVICE_INSTANCE_ID: os.environ['WEBSITE_HOSTNAME'],
+                SERVICE_INSTANCE_ID: os.environ.get('WEBSITE_HOSTNAME',"unknown"),
             }
         )
     )
 )
 
-#BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str("templates"))
 
 tracer = trace.get_tracer(__name__)
+
+app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
+
+FastAPIInstrumentor().instrument_app(app)
+
 traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['CS_APPINSIGHTS'])
 span_processor = BatchSpanProcessor(traceExporter)
 trace.get_tracer_provider().add_span_processor(span_processor)
-
-app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
-FastAPIInstrumentor.instrument_app(app)
 
 @app.get("/", status_code=200)
 async def dashboard_page(request: Request) -> dict:
@@ -42,7 +43,7 @@ async def dashboard_page(request: Request) -> dict:
     """
     return TEMPLATES.TemplateResponse(
         "index.html",
-        {"request": request, "meals": MEALS},
+        {"request": request, "meals": MEALS}
     )
 
 @app.get("/status", status_code=200)
@@ -52,7 +53,7 @@ async def static_status_page(request: Request) -> dict:
     """
     return TEMPLATES.TemplateResponse(
         "status.html",
-        {"request": request},
+        {"request": request}
     )
 
 @app.get("/meal/{meal_id}", status_code=200, response_model=Meal)
@@ -83,8 +84,6 @@ async def search_meals(*,
 
 if __name__ == "__main__":
     # Use this for debugging purposes only
-    #span_processor = BatchSpanProcessor(ConsoleSpanExporter())
-    #trace.get_tracer_provider().add_span_processor(span_processor)
     print("Debugger starting, access @ http://127.0.0.1:8001/docs")
     import uvicorn
     print("Press Control-C to exit", end="...")
