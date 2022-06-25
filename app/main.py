@@ -27,6 +27,8 @@ trace.set_tracer_provider(
 BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
+tracer = trace.get_tracer(__name__)
+
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
 FastAPIInstrumentor.instrument_app(app)
 
