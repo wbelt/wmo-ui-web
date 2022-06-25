@@ -24,8 +24,8 @@ trace.set_tracer_provider(
     )
 )
 
-BASE_PATH = Path(__file__).resolve().parent
-TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
+#BASE_PATH = Path(__file__).resolve().parent
+TEMPLATES = Jinja2Templates(directory=str("templates"))
 
 tracer = trace.get_tracer(__name__)
 traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['CS_APPINSIGHTS'])
