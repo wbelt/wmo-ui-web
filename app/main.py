@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, APIRouter, Query, HTTPException, Request
+from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from typing import Optional, Any
 from pathlib import Path
@@ -18,7 +18,7 @@ trace.set_tracer_provider(
             {
                 SERVICE_NAME: "dashboard",
                 SERVICE_NAMESPACE: "wmo.ui.web",
-                SERVICE_INSTANCE_ID: "main-1",
+                SERVICE_INSTANCE_ID: os.environ['WEBSITE_HOSTNAME'],
             }
         )
     )
@@ -35,10 +35,8 @@ trace.get_tracer_provider().add_span_processor(span_processor)
 app = FastAPI(title="Meal Planning API", openapi_url="/openapi.json")
 FastAPIInstrumentor.instrument_app(app)
 
-api_router = APIRouter()
-
-@api_router.get("/", status_code=200)
-def dashboard_page(request: Request) -> dict:
+@app.get("/", status_code=200)
+async def dashboard_page(request: Request) -> dict:
     """
     The primary dashboard to view meals and access plans.
     """
@@ -47,8 +45,8 @@ def dashboard_page(request: Request) -> dict:
         {"request": request, "meals": MEALS},
     )
 
-@api_router.get("/status", status_code=200)
-def static_status_page(request: Request) -> dict:
+@app.get("/status", status_code=200)
+async def static_status_page(request: Request) -> dict:
     """
     A simple static status page that can be used by helth checks or other monitors to verify uptime.
     """
@@ -57,8 +55,8 @@ def static_status_page(request: Request) -> dict:
         {"request": request},
     )
 
-@api_router.get("/meal/{meal_id}", status_code=200, response_model=Meal)
-def fetch_recipe(*, meal_id: int) -> dict:
+@app.get("/meal/{meal_id}", status_code=200, response_model=Meal)
+async def fetch_recipe(*, meal_id: int) -> dict:
     """
     Fetch a single meal by ID
     """
@@ -70,8 +68,8 @@ def fetch_recipe(*, meal_id: int) -> dict:
             )
     return result[0]
 
-@api_router.get("/search/", status_code=200, response_model=MealSearchResults)
-def search_meals(*,
+@app.get("/search/", status_code=200, response_model=MealSearchResults)
+async def search_meals(*,
     keyword: Optional[str] = Query(None, min_length=3, example="chicken"),
     max_results: Optional[int] = 10) -> dict:
     """
@@ -82,9 +80,6 @@ def search_meals(*,
 
     results = filter(lambda recipe: keyword.lower() in recipe["label"].lower(), MEALS)
     return {"results": list(results)[:max_results]}
-
-
-app.include_router(api_router)
 
 if __name__ == "__main__":
     # Use this for debugging purposes only
