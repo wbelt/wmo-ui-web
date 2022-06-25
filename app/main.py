@@ -18,16 +18,11 @@ trace.set_tracer_provider(
             {
                 SERVICE_NAME: "dashboard",
                 SERVICE_NAMESPACE: "wmo.ui.web",
-                SERVICE_INSTANCE_ID: "main",
+                SERVICE_INSTANCE_ID: os.environ['WEBSITE_HOSTNAME'],
             }
         )
     )
 )
-
-tracer = trace.get_tracer(__name__)
-traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
-span_processor = BatchSpanProcessor(traceExporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
 
 BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
@@ -38,13 +33,23 @@ FastAPIInstrumentor.instrument_app(app)
 api_router = APIRouter()
 
 @api_router.get("/", status_code=200)
-def root(request: Request) -> dict:
+def dashboard_page(request: Request) -> dict:
     """
-    Root Get
+    The primary dashboard to view meals and access plans.
     """
     return TEMPLATES.TemplateResponse(
         "index.html",
         {"request": request, "meals": MEALS},
+    )
+
+@api_router.get("/status", status_code=200)
+def static_status_page(request: Request) -> dict:
+    """
+    A simple static status page that can be used by helth checks or other monitors to verify uptime.
+    """
+    return TEMPLATES.TemplateResponse(
+        "status.html",
+        {"request": request},
     )
 
 @api_router.get("/meal/{meal_id}", status_code=200, response_model=Meal)
@@ -61,13 +66,11 @@ def fetch_recipe(*, meal_id: int) -> dict:
     return result[0]
 
 @api_router.get("/search/", status_code=200, response_model=MealSearchResults)
-def search_meals(
-    *,
-    keyword: Optional[str] = Query(None, min_length=3, example="chicken"),  # 2
-    max_results: Optional[int] = 10
-) -> dict:
+def search_meals(*,
+    keyword: Optional[str] = Query(None, min_length=3, example="chicken"),
+    max_results: Optional[int] = 10) -> dict:
     """
-    Search for recipes based on label keyword
+    Search for meals by label keyword
     """
     if not keyword:
         return {"results": MEALS[:max_results]}
@@ -80,9 +83,14 @@ app.include_router(api_router)
 
 if __name__ == "__main__":
     # Use this for debugging purposes only
+    #span_processor = BatchSpanProcessor(ConsoleSpanExporter())
+    #trace.get_tracer_provider().add_span_processor(span_processor)
     print("Debugger starting, access @ http://127.0.0.1:8001/docs")
     import uvicorn
     print("Press Control-C to exit", end="...")
     uvicorn.run(app, host="0.0.0.0", port=8001, log_level="debug")
     print("application ended.")
-    
+else:
+    traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
+    span_processor = BatchSpanProcessor(traceExporter)
+    trace.get_tracer_provider().add_span_processor(span_processor)
