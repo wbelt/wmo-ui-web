@@ -28,7 +28,7 @@ BASE_PATH = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 tracer = trace.get_tracer(__name__)
-traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['APPINSIGHTS_CONNECTIONSTRING'])
+traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['CS_APPINSIGHTS'])
 span_processor = BatchSpanProcessor(traceExporter)
 trace.get_tracer_provider().add_span_processor(span_processor)
 
