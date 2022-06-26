@@ -10,14 +10,12 @@ bind = "0.0.0.0:8000"
 
 workers = 2
 worker_class = "uvicorn.workers.UvicornWorker"
-
-# Sample logging
-# errorlog = "-"
-# loglevel = "info"
-# accesslog = "-"
-# access_log_format = (
-#     '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
-# )
+errorlog = "-"
+loglevel = "info"
+accesslog = "-"
+access_log_format = (
+    '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+)
 
 def post_fork(server, worker):
     server.log.info("Worker spawned (pid: %s)", worker.pid)
@@ -38,4 +36,3 @@ def post_fork(server, worker):
     trace.get_tracer_provider().add_span_processor(span_processor)
     from opentelemetry.instrumentation.auto_instrumentation import sitecustomize
     server.log.info("Worker (pid: %s) added span processor", worker.pid)
-
