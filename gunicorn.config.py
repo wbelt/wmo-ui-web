@@ -36,4 +36,6 @@ def post_fork(server, worker):
     traceExporter = AzureMonitorTraceExporter.from_connection_string(os.environ['CS_APPINSIGHTS'])
     span_processor = BatchSpanProcessor(traceExporter)
     trace.get_tracer_provider().add_span_processor(span_processor)
+    from opentelemetry.instrumentation.auto_instrumentation import sitecustomize
+    server.log.info("Worker (pid: %s) added span processor", worker.pid)
 
