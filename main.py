@@ -1,4 +1,4 @@
-import os
+import os, logging
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from typing import Optional, Any
@@ -66,3 +66,7 @@ if __name__ == "__main__":
     print("Press Control-C to exit", end="...")
     uvicorn.run(app, host="0.0.0.0", port=8001, log_level="debug")
     print("application ended.")
+else:
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)    
