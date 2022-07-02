@@ -7,6 +7,10 @@ from schemas import MealSearchResults, Meal#, MealCreate
 from meal_data import MEALS
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from log_config import init_loggers
+
+init_loggers()
+logger = logging.getLogger(__name__)
 
 TEMPLATES = Jinja2Templates(directory=str("templates"))
 
@@ -18,6 +22,7 @@ async def dashboard_page(request: Request) -> dict:
     """
     The primary dashboard to view meals and access plans.
     """
+    logger.info("request for dashboard_page")
     return TEMPLATES.TemplateResponse(
         "index.html",
         {"request": request, "meals": MEALS}
@@ -28,6 +33,7 @@ async def static_status_page(request: Request) -> dict:
     """
     A simple static status page that can be used by helth checks or other monitors to verify uptime.
     """
+    logger.info("request for status page")
     return TEMPLATES.TemplateResponse(
         "status.html",
         {"request": request}
@@ -38,7 +44,7 @@ async def fetch_recipe(*, meal_id: int) -> dict:
     """
     Fetch a single meal by ID
     """
-
+    logger.info(f"request for meal ID { meal_id }")
     result = [meal for meal in MEALS if meal["id"] == meal_id]
     if not result:
         raise HTTPException(
@@ -54,9 +60,11 @@ async def search_meals(*,
     Search for meals by label keyword
     """
     if not keyword:
+        logger.info(f"search with no keyword filter")
         return {"results": MEALS[:max_results]}
 
     results = filter(lambda recipe: keyword.lower() in recipe["label"].lower(), MEALS)
+    logger.info(f"search for keyword filter { keyword.lower() }")
     return {"results": list(results)[:max_results]}
 
 if __name__ == "__main__":
@@ -64,9 +72,6 @@ if __name__ == "__main__":
     print("Debugger starting, access @ http://127.0.0.1:8001/docs")
     import uvicorn
     print("Press Control-C to exit", end="...")
+    logger.info(f"starting debug application")
     uvicorn.run(app, host="0.0.0.0", port=8001, log_level="debug")
     print("application ended.")
-else:
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)    
